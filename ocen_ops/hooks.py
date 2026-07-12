@@ -9,11 +9,11 @@ required_apps = ["frappe", "lending"]
 # Document Events
 doc_events = {
     "Customer": {
-        "after_insert": "ocen_ops.ocen_ops.crm.sync.on_customer_created",
-        "on_update": "ocen_ops.ocen_ops.crm.sync.on_customer_updated",
+        "after_insert": "ocen_ops.crm.sync.on_customer_created",
+        "on_update": "ocen_ops.crm.sync.on_customer_updated",
     },
     "OCEN Ops Action": {
-        "after_insert": "ocen_ops.ocen_ops.ops.actions.dispatch_to_platform",
+        "after_insert": "ocen_ops.ops.actions.dispatch_to_platform",
     },
 }
 
@@ -21,7 +21,7 @@ doc_events = {
 scheduler_events = {
     "cron": {
         "*/15 * * * *": [
-            "ocen_ops.ocen_ops.ops.reconcile.run_reconciliation",
+            "ocen_ops.ops.reconcile.run_reconciliation",
         ],
     },
 }
