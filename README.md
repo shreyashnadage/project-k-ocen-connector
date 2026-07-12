@@ -1,55 +1,94 @@
-# OCEN Connector
+# OCEN Ops — Frappe Back-Office for OCEN LA Platform
 
-Frappe/ERPNext custom app that connects vendor ERP instances to the OCEN LA platform for receivables financing via REST APIs.
+Enterprise Frappe app providing CRM + Loan Management for the OCEN Loan Agent platform. Acts as the operational back-office where your ops team manages vendors, tracks loan lifecycle, and intervenes when needed.
+
+## What It Does
+
+- **CRM**: Manage anchors (buyers) and vendors (borrowers) as Customers in ERPNext
+- **Loan Tracking**: Mirror platform loan state in real-time via webhooks
+- **Ops Actions**: Hold/release applications, flag for review, escalate to collections
+- **Lending Integration**: Auto-create Loan → Disbursement → Repayment records in frappe/lending
+- **Bidirectional Onboarding**: Ops invites vendors from Frappe OR vendors self-register on PWA
+
+## Architecture
+
+```
+Platform (Temporal + FastAPI)
+    │
+    ├── Webhooks (HMAC-signed) ──→ ocen_ops webhook receiver
+    │                                   │
+    │                                   ▼
+    │                            OCEN Loan Application (status mirror)
+    │                            Vendor/Anchor Onboarding
+    │                            frappe/lending Loan docs
+    │
+    └── Ops Command API ←──── OCEN Ops Action (after_insert hook)
+```
 
 ## Installation
 
 ```bash
-cd /path/to/frappe-bench
-bench get-app https://github.com/shreyashnadage/project-k-ocen-connector.git
-bench --site your-site install-app ocen_connector
+# Prerequisites: Frappe Bench with ERPNext + frappe/lending installed
+
+# Install the app
+bench get-app https://github.com/shreyashnadage/project-k-ocen-connector
+
+# Install on your site
+bench --site your-site.local install-app ocen_ops
+
+# Run migrations
+bench --site your-site.local migrate
 ```
 
 ## Configuration
 
-1. Navigate to **OCEN Settings** in your ERPNext instance.
-2. Set the **API Base URL** (e.g., `https://ocen-platform.example.com`).
-3. Enter your **API Key** and **Participant ID** (provided by the OCEN LA platform).
-4. Enable/disable **Auto Capture Invoices** (captures invoices on submit).
+Add to `sites/your-site.local/site_config.json`:
 
-## Usage
-
-### Automatic Invoice Capture
-
-When enabled, every submitted Sales Invoice is automatically sent to the OCEN platform's `/invoices/captured` endpoint.
-
-### Apply for a Loan
-
-From the browser console or a custom button:
-
-```python
-frappe.call({
-    method: "ocen_connector.api.apply_for_loan",
-    args: { invoice_name: "SINV-00001", amount: 500000 },
-    callback: function(r) { console.log(r.message); }
-});
+```json
+{
+  "ocen_platform_url": "http://platform-instance:8000",
+  "ocen_ops_api_key": "your-ops-api-key",
+  "ocen_webhook_secret": "your-webhook-secret"
+}
 ```
 
-### Status Polling
+## Doctypes
 
-A scheduler job runs every 5 minutes to poll the platform for status updates on all active loan applications. You can also manually check:
+| Doctype | Purpose |
+|---------|---------|
+| OCEN Loan Application | Mirrors platform loan state. Shows gate progress, offers, ops flags. |
+| OCEN Ops Action | Audit log of every ops intervention (hold, release, flag, escalate). |
+| Vendor Onboarding | Tracks vendor registration, PWA invite status, KYC. |
+| Anchor Onboarding | Tracks anchor setup, repayment routing status. |
+| Platform Webhook Log | Inbound webhook audit trail. |
 
-```python
-frappe.call({
-    method: "ocen_connector.api.check_status",
-    args: { application_name: "OCEN-LOAN-00001" }
-});
+## Roles
+
+| Role | Access |
+|------|--------|
+| OCEN Ops Manager | Full CRUD on loan applications + ops actions |
+| OCEN Ops Viewer | Read-only on all OCEN docs |
+| OCEN Collections | Can escalate + create collection actions |
+| OCEN CRM Manager | CRUD on Customers + onboarding docs |
+
+## API Endpoints
+
+### Webhook Receiver (Platform → Frappe)
+```
+POST /api/method/ocen_ops.ocen_ops.api.receive_platform_webhook
+Headers: X-Platform-Signature (HMAC-SHA256)
 ```
 
-## DocTypes
+### Application Status
+```
+GET /api/method/ocen_ops.ocen_ops.api.get_application_status?platform_application_id=...
+```
 
-- **OCEN Settings** — singleton for platform configuration
-- **OCEN Loan Application** — tracks each loan application lifecycle through D0-D3 gates
+## Dependencies
+
+- Frappe Framework v15+
+- ERPNext (for Customer doctype)
+- frappe/lending (for Loan, Loan Disbursement, Loan Repayment)
 
 ## License
 

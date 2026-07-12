@@ -1,0 +1,188 @@
+{
+  "name": "OCEN Loan Application",
+  "module": "Ocen Ops",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "naming_rule": "Expression",
+  "autoname": "OCEN-APP-.#####",
+  "title_field": "platform_application_id",
+  "search_fields": "platform_application_id,vendor_gstin,anchor_gstin,platform_status",
+  "track_changes": 1,
+  "fields": [
+    {
+      "fieldname": "platform_application_id",
+      "fieldtype": "Data",
+      "label": "Platform Application ID",
+      "unique": 1,
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "platform_status",
+      "fieldtype": "Select",
+      "label": "Platform Status",
+      "options": "created\nkind1_validated\naa_consent_requested\naa_data_received\ndata_sufficient\nderived_computed\nlender_matched\nsubmitted_to_lender\noffer_received\noffer_accepted\ndisbursed\nrepaying\nclosed\nrejected\nexpired",
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "default": "created"
+    },
+    {
+      "fieldname": "section_vendor_details",
+      "fieldtype": "Section Break",
+      "label": "Vendor & Anchor Details"
+    },
+    {
+      "fieldname": "vendor_gstin",
+      "fieldtype": "Data",
+      "label": "Vendor GSTIN",
+      "length": 15,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "anchor_gstin",
+      "fieldtype": "Data",
+      "label": "Anchor GSTIN",
+      "length": 15
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "amount_requested",
+      "fieldtype": "Currency",
+      "label": "Amount Requested",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "amount_sanctioned",
+      "fieldtype": "Currency",
+      "label": "Amount Sanctioned"
+    },
+    {
+      "fieldname": "section_workflow",
+      "fieldtype": "Section Break",
+      "label": "Workflow & Gates"
+    },
+    {
+      "fieldname": "workflow_id",
+      "fieldtype": "Data",
+      "label": "Temporal Workflow ID",
+      "read_only": 1
+    },
+    {
+      "fieldname": "current_gate",
+      "fieldtype": "Select",
+      "label": "Current Gate",
+      "options": "\nd0_kind1_gate\nd1_data_sufficiency\nd2_derived_attributes\nd3_lender_prescreen\nd4_lender_underwriting",
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_3",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "decision_receipts",
+      "fieldtype": "JSON",
+      "label": "Decision Receipts",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_ops",
+      "fieldtype": "Section Break",
+      "label": "Ops Controls"
+    },
+    {
+      "fieldname": "ops_hold",
+      "fieldtype": "Check",
+      "label": "Ops Hold",
+      "default": 0
+    },
+    {
+      "fieldname": "ops_hold_reason",
+      "fieldtype": "Small Text",
+      "label": "Hold Reason",
+      "depends_on": "ops_hold"
+    },
+    {
+      "fieldname": "column_break_4",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "ops_flags",
+      "fieldtype": "JSON",
+      "label": "Ops Flags"
+    },
+    {
+      "fieldname": "section_offer",
+      "fieldtype": "Section Break",
+      "label": "Lender Offer",
+      "collapsible": 1
+    },
+    {
+      "fieldname": "lender_name",
+      "fieldtype": "Data",
+      "label": "Lender Name"
+    },
+    {
+      "fieldname": "offer_data",
+      "fieldtype": "JSON",
+      "label": "Offer Data"
+    },
+    {
+      "fieldname": "column_break_5",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "linked_loan",
+      "fieldtype": "Link",
+      "label": "Linked Loan",
+      "options": "Loan"
+    },
+    {
+      "fieldname": "linked_loan_application",
+      "fieldtype": "Link",
+      "label": "Linked Loan Application",
+      "options": "Loan Application"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "OCEN Ops Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 0,
+      "submit": 0,
+      "cancel": 0,
+      "amend": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "OCEN Ops Viewer",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1,
+      "print": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

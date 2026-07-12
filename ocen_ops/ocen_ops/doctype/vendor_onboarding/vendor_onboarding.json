@@ -1,0 +1,110 @@
+{
+  "name": "Vendor Onboarding",
+  "module": "Ocen Ops",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "naming_rule": "Expression",
+  "autoname": "VENDOR-.#####",
+  "title_field": "gstin",
+  "search_fields": "gstin,platform_vendor_id",
+  "track_changes": 1,
+  "fields": [
+    {
+      "fieldname": "customer",
+      "fieldtype": "Link",
+      "label": "Customer",
+      "options": "Customer"
+    },
+    {
+      "fieldname": "gstin",
+      "fieldtype": "Data",
+      "label": "GSTIN",
+      "length": 15,
+      "unique": 1,
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "udyam_number",
+      "fieldtype": "Data",
+      "label": "Udyam Number"
+    },
+    {
+      "fieldname": "udyam_category",
+      "fieldtype": "Select",
+      "label": "Udyam Category",
+      "options": "\nmicro\nsmall\nmedium"
+    },
+    {
+      "fieldname": "section_platform",
+      "fieldtype": "Section Break",
+      "label": "Platform Sync"
+    },
+    {
+      "fieldname": "platform_vendor_id",
+      "fieldtype": "Data",
+      "label": "Platform Vendor ID",
+      "read_only": 1
+    },
+    {
+      "fieldname": "sync_status",
+      "fieldtype": "Select",
+      "label": "Sync Status",
+      "options": "Pending\nSynced\nFailed",
+      "default": "Pending",
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "pwa_invite_sent",
+      "fieldtype": "Check",
+      "label": "PWA Invite Sent",
+      "default": 0
+    },
+    {
+      "fieldname": "pwa_invite_token",
+      "fieldtype": "Data",
+      "label": "Invite Token",
+      "read_only": 1
+    },
+    {
+      "fieldname": "pwa_registered",
+      "fieldtype": "Check",
+      "label": "PWA Registered",
+      "default": 0,
+      "read_only": 1,
+      "in_list_view": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "OCEN CRM Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "OCEN Ops Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "OCEN Ops Viewer",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

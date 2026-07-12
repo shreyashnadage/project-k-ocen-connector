@@ -1,0 +1,99 @@
+{
+  "name": "OCEN Ops Action",
+  "module": "Ocen Ops",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "naming_rule": "Expression",
+  "autoname": "OPS-ACT-.#####",
+  "track_changes": 1,
+  "fields": [
+    {
+      "fieldname": "application",
+      "fieldtype": "Link",
+      "label": "Application",
+      "options": "OCEN Loan Application",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "action_type",
+      "fieldtype": "Select",
+      "label": "Action Type",
+      "options": "hold\nrelease\nflag\nescalate\noverride_status",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "reason",
+      "fieldtype": "Small Text",
+      "label": "Reason",
+      "reqd": 1
+    },
+    {
+      "fieldname": "section_platform",
+      "fieldtype": "Section Break",
+      "label": "Platform Response"
+    },
+    {
+      "fieldname": "platform_ack",
+      "fieldtype": "Check",
+      "label": "Platform Acknowledged",
+      "read_only": 1,
+      "default": 0
+    },
+    {
+      "fieldname": "platform_response",
+      "fieldtype": "JSON",
+      "label": "Platform Response",
+      "read_only": 1
+    },
+    {
+      "fieldname": "column_break_2",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "performed_by",
+      "fieldtype": "Link",
+      "label": "Performed By",
+      "options": "User",
+      "default": "__user",
+      "read_only": 1
+    },
+    {
+      "fieldname": "action_timestamp",
+      "fieldtype": "Datetime",
+      "label": "Timestamp",
+      "default": "Now",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "OCEN Ops Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "OCEN Collections",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "OCEN Ops Viewer",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

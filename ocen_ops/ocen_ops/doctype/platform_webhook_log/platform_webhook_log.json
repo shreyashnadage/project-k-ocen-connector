@@ -1,0 +1,57 @@
+{
+  "name": "Platform Webhook Log",
+  "module": "Ocen Ops",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "naming_rule": "Expression",
+  "autoname": "WH-LOG-.#####",
+  "track_changes": 0,
+  "fields": [
+    {
+      "fieldname": "event_type",
+      "fieldtype": "Data",
+      "label": "Event Type",
+      "reqd": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "payload",
+      "fieldtype": "JSON",
+      "label": "Payload"
+    },
+    {
+      "fieldname": "column_break_1",
+      "fieldtype": "Column Break"
+    },
+    {
+      "fieldname": "processed",
+      "fieldtype": "Check",
+      "label": "Processed",
+      "default": 0,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "error",
+      "fieldtype": "Small Text",
+      "label": "Error"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    },
+    {
+      "role": "OCEN Ops Manager",
+      "read": 1
+    }
+  ],
+  "sort_field": "creation",
+  "sort_order": "DESC"
+}
