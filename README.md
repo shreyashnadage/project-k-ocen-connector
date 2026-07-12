@@ -75,13 +75,13 @@ Add to `sites/your-site.local/site_config.json`:
 
 ### Webhook Receiver (Platform → Frappe)
 ```
-POST /api/method/ocen_ops.ocen_ops.api.receive_platform_webhook
+POST /api/method/ocen_ops.api.receive_platform_webhook
 Headers: X-Platform-Signature (HMAC-SHA256)
 ```
 
 ### Application Status
 ```
-GET /api/method/ocen_ops.ocen_ops.api.get_application_status?platform_application_id=...
+GET /api/method/ocen_ops.api.get_application_status?platform_application_id=...
 ```
 
 ## Dependencies

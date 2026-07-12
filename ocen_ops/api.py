@@ -1,6 +1,6 @@
 """Whitelisted API endpoints for the OCEN Ops app.
 
-Exposed at /api/method/ocen_ops.ocen_ops.api.*
+Exposed at /api/method/ocen_ops.api.*
 """
 
 import hashlib
@@ -141,7 +141,7 @@ def _handle_offer_accepted(payload):
     doc.platform_status = "offer_accepted"
     doc.save(ignore_permissions=True)
 
-    from ocen_ops.ocen_ops.lending.lifecycle import create_loan_from_offer
+    from ocen_ops.lending.lifecycle import create_loan_from_offer
     create_loan_from_offer(name)
 
 
@@ -155,7 +155,7 @@ def _handle_disbursed(payload):
     doc.platform_status = "disbursed"
     doc.save(ignore_permissions=True)
 
-    from ocen_ops.ocen_ops.lending.lifecycle import create_disbursement
+    from ocen_ops.lending.lifecycle import create_disbursement
     create_disbursement(name)
 
 
@@ -173,7 +173,7 @@ def _handle_repayment_observed(payload):
     amount = app_data.get("amount", 0)
     payment_ref = app_data.get("payment_reference", "")
 
-    from ocen_ops.ocen_ops.lending.lifecycle import create_repayment
+    from ocen_ops.lending.lifecycle import create_repayment
     create_repayment(name, amount, payment_ref)
 
 
@@ -187,7 +187,7 @@ def _handle_closed(payload):
     doc.platform_status = "closed"
     doc.save(ignore_permissions=True)
 
-    from ocen_ops.ocen_ops.lending.lifecycle import close_loan
+    from ocen_ops.lending.lifecycle import close_loan
     close_loan(name)
 
 
