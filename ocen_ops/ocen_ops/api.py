@@ -45,13 +45,30 @@ def receive_platform_webhook():
     handler = WEBHOOK_HANDLERS.get(event_type)
     if handler:
         try:
-            handler(event_payload)
+            handler(payload)
             frappe.db.commit()
         except Exception as e:
             frappe.log_error(f"Webhook handler error for {event_type}: {e}")
             frappe.db.rollback()
 
     return {"status": "ok", "event_type": event_type}
+
+
+# ─── Helper: resolve OCEN Loan Application name from platform ID ────────
+
+
+def _get_ocen_app_name(payload):
+    """Extract platform_application_id from event and find the Frappe doc name."""
+    app_data = payload.get("payload", payload)
+    platform_id = app_data.get("correlation_id") or app_data.get("entity_id")
+    if not platform_id:
+        return None
+    return frappe.db.get_value(
+        "OCEN Loan Application", {"platform_application_id": platform_id}
+    )
+
+
+# ─── Handlers ──────────────────────────────────────────────────────────
 
 
 def _handle_application_created(payload):
@@ -101,26 +118,112 @@ def _handle_decision_evaluated(payload):
     doc.save(ignore_permissions=True)
 
 
-def _handle_status_update(payload, status):
-    """Generic status update handler."""
+def _handle_offer_received(payload):
+    """Store offer data when lender responds."""
     app_data = payload.get("payload", payload)
-    platform_id = app_data.get("correlation_id") or app_data.get("entity_id")
-
-    if not platform_id:
+    name = _get_ocen_app_name(payload)
+    if not name:
         return
 
-    name = frappe.db.get_value(
-        "OCEN Loan Application", {"platform_application_id": platform_id}
-    )
+    doc = frappe.get_doc("OCEN Loan Application", name)
+    doc.platform_status = "offer_received"
+    doc.offer_data = json.dumps(app_data.get("offer", {}))
+    doc.save(ignore_permissions=True)
+
+
+def _handle_offer_accepted(payload):
+    """Offer accepted — create Loan Application + Loan in frappe/lending."""
+    name = _get_ocen_app_name(payload)
+    if not name:
+        return
+
+    doc = frappe.get_doc("OCEN Loan Application", name)
+    doc.platform_status = "offer_accepted"
+    doc.save(ignore_permissions=True)
+
+    from ocen_ops.ocen_ops.lending.lifecycle import create_loan_from_offer
+    create_loan_from_offer(name)
+
+
+def _handle_disbursed(payload):
+    """Loan disbursed — create Loan Disbursement entry."""
+    name = _get_ocen_app_name(payload)
+    if not name:
+        return
+
+    doc = frappe.get_doc("OCEN Loan Application", name)
+    doc.platform_status = "disbursed"
+    doc.save(ignore_permissions=True)
+
+    from ocen_ops.ocen_ops.lending.lifecycle import create_disbursement
+    create_disbursement(name)
+
+
+def _handle_repayment_observed(payload):
+    """Repayment received — create Loan Repayment entry."""
+    app_data = payload.get("payload", payload)
+    name = _get_ocen_app_name(payload)
+    if not name:
+        return
+
+    doc = frappe.get_doc("OCEN Loan Application", name)
+    doc.platform_status = "repaying"
+    doc.save(ignore_permissions=True)
+
+    amount = app_data.get("amount", 0)
+    payment_ref = app_data.get("payment_reference", "")
+
+    from ocen_ops.ocen_ops.lending.lifecycle import create_repayment
+    create_repayment(name, amount, payment_ref)
+
+
+def _handle_closed(payload):
+    """Loan closed — mark Loan as closed."""
+    name = _get_ocen_app_name(payload)
+    if not name:
+        return
+
+    doc = frappe.get_doc("OCEN Loan Application", name)
+    doc.platform_status = "closed"
+    doc.save(ignore_permissions=True)
+
+    from ocen_ops.ocen_ops.lending.lifecycle import close_loan
+    close_loan(name)
+
+
+def _handle_status_update(payload, status):
+    """Generic status update handler for events without lending side-effects."""
+    name = _get_ocen_app_name(payload)
     if not name:
         return
 
     doc = frappe.get_doc("OCEN Loan Application", name)
     doc.platform_status = status
+    doc.save(ignore_permissions=True)
 
-    if status == "offer_received":
-        doc.offer_data = json.dumps(app_data.get("offer", {}))
 
+def _handle_ops_hold(payload):
+    """Platform applied a hold — mirror to Frappe doc."""
+    app_data = payload.get("payload", payload)
+    name = _get_ocen_app_name(payload)
+    if not name:
+        return
+
+    doc = frappe.get_doc("OCEN Loan Application", name)
+    doc.ops_hold = 1
+    doc.ops_hold_reason = app_data.get("reason", "")
+    doc.save(ignore_permissions=True)
+
+
+def _handle_ops_released(payload):
+    """Platform released a hold — mirror to Frappe doc."""
+    name = _get_ocen_app_name(payload)
+    if not name:
+        return
+
+    doc = frappe.get_doc("OCEN Loan Application", name)
+    doc.ops_hold = 0
+    doc.ops_hold_reason = ""
     doc.save(ignore_permissions=True)
 
 
@@ -160,18 +263,29 @@ def _handle_vendor_onboarded(payload):
     doc.insert(ignore_permissions=True)
 
 
+# ─── Handler Registry ──────────────────────────────────────────────────
+
+
 WEBHOOK_HANDLERS = {
+    # Loan lifecycle — with lending side-effects
     "loan.application_created": _handle_application_created,
     "loan.decision_evaluated": _handle_decision_evaluated,
     "loan.submitted_to_lender": lambda p: _handle_status_update(p, "submitted_to_lender"),
-    "loan.offer_received": lambda p: _handle_status_update(p, "offer_received"),
-    "loan.offer_accepted": lambda p: _handle_status_update(p, "offer_accepted"),
-    "loan.disbursed": lambda p: _handle_status_update(p, "disbursed"),
-    "loan.repayment_observed": lambda p: _handle_status_update(p, "repaying"),
-    "loan.closed": lambda p: _handle_status_update(p, "closed"),
+    "loan.offer_received": _handle_offer_received,
+    "loan.offer_accepted": _handle_offer_accepted,
+    "loan.disbursed": _handle_disbursed,
+    "loan.repayment_observed": _handle_repayment_observed,
+    "loan.closed": _handle_closed,
     "loan.rejected": lambda p: _handle_status_update(p, "rejected"),
+    # Ops events
+    "ops.hold_applied": _handle_ops_hold,
+    "ops.hold_released": _handle_ops_released,
+    "ops.flag_added": lambda p: _handle_status_update(p, None),
+    "ops.escalated": lambda p: _handle_status_update(p, None),
+    # Vendor/Anchor lifecycle
     "vendor.onboarded": _handle_vendor_onboarded,
     "vendor.activated": _handle_vendor_onboarded,
+    "vendor.invited": _handle_vendor_onboarded,
 }
 
 
@@ -190,4 +304,5 @@ def get_application_status(platform_application_id):
         "platform_status": doc.platform_status,
         "current_gate": doc.current_gate,
         "ops_hold": doc.ops_hold,
+        "linked_loan": doc.linked_loan,
     }
